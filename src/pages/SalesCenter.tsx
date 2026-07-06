@@ -334,9 +334,9 @@ export default function SalesCenter() {
     {
       title: t('call.col.note'),
       dataIndex: 'note',
-      width: 260,
-      ellipsis: true,
-      render: (v: string | undefined) => v || <Text type="secondary">—</Text>,
+      width: 300,
+      render: (v: string | undefined) =>
+        v ? <span style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{v}</span> : <Text type="secondary">—</Text>,
     },
     { title: t('call.col.agent'), dataIndex: 'agent', width: 190 },
   ]
@@ -448,7 +448,7 @@ export default function SalesCenter() {
                   rowKey="id"
                   columns={callColumns}
                   dataSource={callData}
-                  scroll={{ x: 1250 }}
+                  scroll={{ x: 1290 }}
                   locale={{ emptyText: t('call.empty') }}
                   pagination={{ showTotal: (n) => t('common.total', { n }), showSizeChanger: true }}
                 />
