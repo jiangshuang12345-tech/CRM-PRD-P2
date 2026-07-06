@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Avatar, Button, DatePicker, Form, Input, Modal, Select, Space, Tag, Typography, message } from 'antd'
-import { PhoneOutlined, PhoneFilled, LoadingOutlined } from '@ant-design/icons'
+import { PhoneOutlined, PhoneFilled, LoadingOutlined, MinusOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import type { CallResult, Student } from '../types'
 import { CALL_RESULTS } from '../types'
@@ -44,6 +44,7 @@ export default function DialButton({
   const { t } = useI18n()
   const { actor } = usePerm()
   const [open, setOpen] = useState(false)
+  const [minimized, setMinimized] = useState(false)
   const [phase, setPhase] = useState<Phase>('calling')
   const [seconds, setSeconds] = useState(0)
   const [result, setResult] = useState<CallResult>('已接通')
@@ -67,6 +68,7 @@ export default function DialButton({
   const startCall = () => {
     if (!phone) return
     setOpen(true)
+    setMinimized(false)
     setPhase('calling')
     setSeconds(0)
     setResult('已接通')
@@ -128,8 +130,19 @@ export default function DialButton({
 
   const close = () => {
     setOpen(false)
+    setMinimized(false)
     clearTimers()
   }
+
+  // 悬浮球上的挂断：结束当前阶段并展开到小结页
+  const widgetHangUp = () => {
+    if (phase === 'calling') cancelRinging()
+    else if (phase === 'connected') hangUp()
+    setMinimized(false)
+  }
+
+  const closableNow = phase !== 'summary'
+  const initial = (student.localName || student.name || '?').slice(0, 1)
 
   return (
     <>
@@ -145,12 +158,25 @@ export default function DialButton({
       </Button>
 
       <Modal
-        open={open}
-        title={t('call.softphone')}
+        open={open && !minimized}
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>{t('call.softphone')}</span>
+            <Button
+              type="text"
+              size="small"
+              icon={<MinusOutlined />}
+              onClick={() => setMinimized(true)}
+              style={{ marginInlineEnd: closableNow ? 20 : 0 }}
+            >
+              {t('call.minimize')}
+            </Button>
+          </div>
+        }
         footer={null}
         onCancel={phase === 'summary' ? undefined : close}
         maskClosable={false}
-        closable={phase !== 'summary'}
+        closable={closableNow}
         width={420}
         destroyOnClose
       >
@@ -249,6 +275,56 @@ export default function DialButton({
           </div>
         )}
       </Modal>
+
+      {/* 最小化后的悬浮软电话：拨号中可查看用户信息 / 历史回访，通话计时后台继续 */}
+      {open && minimized && (
+        <div
+          onClick={() => setMinimized(false)}
+          style={{
+            position: 'fixed',
+            right: 24,
+            bottom: 24,
+            zIndex: 1100,
+            width: 268,
+            background: '#fff',
+            borderRadius: 12,
+            boxShadow: '0 8px 28px rgba(0,0,0,0.20)',
+            padding: 12,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            cursor: 'pointer',
+            borderInlineStart: `3px solid ${phase === 'connected' ? '#52c41a' : '#2F6BFF'}`,
+          }}
+        >
+          <Avatar size={40} style={{ background: '#2F6BFF', flexShrink: 0 }}>
+            {initial}
+          </Avatar>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {student.localName || student.name}
+            </div>
+            <div style={{ fontSize: 12, color: '#8c8c8c', fontVariantNumeric: 'tabular-nums' }}>
+              {phase === 'calling' && t('call.ringing')}
+              {phase === 'connected' && `${t('call.connected')} · ${fmtDuration(seconds)}`}
+              {phase === 'summary' && t('call.summaryPending')}
+            </div>
+          </div>
+          {phase !== 'summary' && (
+            <Button
+              danger
+              type="primary"
+              size="small"
+              shape="circle"
+              icon={<PhoneFilled />}
+              onClick={(e) => {
+                e.stopPropagation()
+                widgetHangUp()
+              }}
+            />
+          )}
+        </div>
+      )}
     </>
   )
 }
