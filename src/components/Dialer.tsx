@@ -19,6 +19,18 @@ function fmtDuration(sec: number) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
+// 模拟外呼系统「接通后自动记录对话内容」（真实场景由 ASR/AI 转写生成），随机取一段回填
+const AUTO_TRANSCRIPTS = [
+  '家长表示孩子对英语学习有兴趣，已介绍课程体系与价格，家长同意本周末安排一次免费体验课。',
+  '接通后沟通约 3 分钟，家长了解了课包内容与满减优惠，对价格仍有顾虑，倾向再对比后决定，已约定下次回访。',
+  '家长确认孩子当前英语基础较弱，已推荐启蒙季度包并说明优惠，家长要求把课程资料发送到手机后再沟通。',
+  '家长在忙暂不方便详谈，简单介绍了体验课，家长同意稍晚再联系，已记录其空闲时间为晚上 8 点后。',
+]
+
+function pickTranscript() {
+  return `【外呼自动记录】${AUTO_TRANSCRIPTS[Math.floor(Math.random() * AUTO_TRANSCRIPTS.length)]}`
+}
+
 // 轻量外呼：点击拨号按钮，弹出模拟软电话，挂断后填写通话小结并回写到客户档案
 export default function DialButton({
   student,
@@ -69,10 +81,11 @@ export default function DialButton({
     }, 2000)
   }
 
-  // 通话中挂断 → 已接通并进入小结
+  // 通话中挂断 → 已接通并进入小结；外呼接通后自动记录对话内容并回填到本次跟进记录
   const hangUp = () => {
     clearTimers()
     setResult('已接通')
+    setNote(pickTranscript())
     setPhase('summary')
   }
 
@@ -87,6 +100,10 @@ export default function DialButton({
   const connected = result === '已接通'
 
   const saveAndWriteBack = () => {
+    if (!note.trim()) {
+      message.warning(t('call.noteRequired'))
+      return
+    }
     addCallRecord(
       {
         studentId: student.studentId,
@@ -200,9 +217,14 @@ export default function DialButton({
                   options={CALL_RESULTS.map((r) => ({ label: t(`call.result.${r}`), value: r }))}
                 />
               </Form.Item>
-              <Form.Item label={t('call.summary')} style={{ marginBottom: 12 }}>
+              <Form.Item
+                label={t('call.summary')}
+                required
+                extra={connected ? t('call.autoNote') : undefined}
+                style={{ marginBottom: 12 }}
+              >
                 <Input.TextArea
-                  rows={3}
+                  rows={4}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder={t('call.summaryPlaceholder')}

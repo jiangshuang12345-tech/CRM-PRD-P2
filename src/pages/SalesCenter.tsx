@@ -253,15 +253,12 @@ export default function SalesCenter() {
           {
             title: t('common.action'),
             key: 'op',
-            width: 180,
+            width: 120,
             fixed: 'right' as const,
             render: (_: unknown, r: Student) => (
-              <Space size={0}>
-                <DialButton student={r} size="small" />
-                <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => claim(r)}>
-                  {t('sales.claim')}
-                </Button>
-              </Space>
+              <Button type="link" icon={<CheckOutlined />} onClick={() => claim(r)}>
+                {t('sales.claim')}
+              </Button>
             ),
           },
         ]
