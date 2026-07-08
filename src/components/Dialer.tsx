@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Avatar, Button, DatePicker, Form, Input, Modal, Select, Space, Tag, Typography, message } from 'antd'
+import { Avatar, Button, Form, Input, Modal, Select, Space, Tag, Typography, message } from 'antd'
 import { PhoneOutlined, PhoneFilled, LoadingOutlined, MinusOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import type { CallResult, Student } from '../types'
@@ -49,7 +49,6 @@ export default function DialButton({
   const [seconds, setSeconds] = useState(0)
   const [result, setResult] = useState<CallResult>('已接通')
   const [note, setNote] = useState('')
-  const [nextFollow, setNextFollow] = useState<dayjs.Dayjs | null>(null)
   const startRef = useRef<string>('')
   const ringTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const tickTimer = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -73,7 +72,6 @@ export default function DialButton({
     setSeconds(0)
     setResult('已接通')
     setNote('')
-    setNextFollow(null)
     startRef.current = dayjs().format('YYYY-MM-DD HH:mm:ss')
     clearTimers()
     // 模拟振铃 ~2s 后接通
@@ -120,7 +118,6 @@ export default function DialButton({
       },
       {
         followNote: note.trim() ? `${t(`call.result.${result}`)}｜${note.trim()}` : t(`call.result.${result}`),
-        nextFollow: nextFollow ? nextFollow.format('YYYY-MM-DD HH:mm:ss') : undefined,
       },
     )
     message.success(t('call.writeBackOk'))
@@ -254,15 +251,6 @@ export default function DialButton({
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder={t('call.summaryPlaceholder')}
-                />
-              </Form.Item>
-              <Form.Item label={t('call.nextFollow')} style={{ marginBottom: 4 }}>
-                <DatePicker
-                  showTime
-                  style={{ width: '100%' }}
-                  format="YYYY-MM-DD HH:mm"
-                  value={nextFollow}
-                  onChange={setNextFollow}
                 />
               </Form.Item>
             </Form>
